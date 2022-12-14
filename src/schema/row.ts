@@ -8,7 +8,7 @@ export default {
     {
       name: 'cells',
       type: 'array',
-      of: [{ type: 'string' }],
+      of: [{ type: 'block' }],
     },
   ],
 };
