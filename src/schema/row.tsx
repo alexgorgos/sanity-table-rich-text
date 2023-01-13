@@ -1,4 +1,4 @@
-import config from 'config:table';
+import config from 'config:table-rich-text';
 
 export default {
   title: 'Table Row',

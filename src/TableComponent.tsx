@@ -1,26 +1,49 @@
-import React, { useState, FunctionComponent, forwardRef } from 'react';
+import React, {
+  useState,
+  FunctionComponent,
+  forwardRef,
+  FormEvent,
+} from 'react';
 import { uuid } from '@sanity/uuid';
 import FormField from 'part:@sanity/components/formfields/default';
 import PatchEvent, { set, unset } from 'part:@sanity/form-builder/patch-event';
-import config from 'config:table';
+import config from 'config:table-rich-text';
 import TableControl from './components/TableControl';
 import TableInput from './components/TableInput';
 import TableMenu from './components/TableMenu';
 import { Box, Button, Card, Dialog, Flex, Inline, Text } from '@sanity/ui';
 
-// This probably isn't necessary anymore
-function deepClone<T>(obj: T): T {
-  return JSON.parse(JSON.stringify(obj));
-}
+const deepClone: <T>(data: T) => T =
+  globalThis.structuredClone ?? (data => JSON.parse(JSON.stringify(data)));
 
-const TableComponent: FunctionComponent<RootProps> = (props) => {
+type Props = {
+  level: number;
+  markers: any[];
+  type: {
+    title: string;
+    description: string;
+    options: Record<string, any>;
+  };
+  value: {
+    rows: TableRow[];
+  };
+  onChange: (data: unknown) => unknown;
+};
+
+export type TableRow = {
+  _type: string;
+  _key: string;
+  cells: string[];
+};
+
+const TableComponent: FunctionComponent<Props> = props => {
   const { type, level, value, markers, onChange } = props;
   const [dialog, setDialog] = useState<{
     type: string;
     callback: () => any;
   } | null>(null);
 
-  const updateValue = (value) => {
+  const updateValue = (value: Props['value']) => {
     return onChange(PatchEvent.from(set(value)));
   };
 
@@ -43,7 +66,7 @@ const TableComponent: FunctionComponent<RootProps> = (props) => {
         },
       ],
     };
-    return updateValue({...(value || {}), ...newValue });
+    return updateValue({ ...(value ?? {}), ...newValue });
   };
 
   const confirmRemoveTable = () => {
@@ -56,7 +79,7 @@ const TableComponent: FunctionComponent<RootProps> = (props) => {
   };
 
   const addRows = (count: number = 1) => {
-    const newValue = { ...value };
+    const newValue = deepClone(value);
     // Calculate the column count from the first row
     const columnCount = value.rows[0].cells.length;
     for (let i = 0; i < count; i++) {
@@ -71,7 +94,7 @@ const TableComponent: FunctionComponent<RootProps> = (props) => {
   };
 
   const addRowAt = (index: number = 0) => {
-    const newValue = { ...value };
+    const newValue = deepClone(value);
     // Calculate the column count from the first row
     const columnCount = value.rows[0].cells.length;
 
@@ -79,7 +102,7 @@ const TableComponent: FunctionComponent<RootProps> = (props) => {
       _type: config.rowType,
       _key: uuid(),
       cells: Array(columnCount).fill(''),
-    })
+    });
 
     return updateValue(newValue);
   };
@@ -116,24 +139,30 @@ const TableComponent: FunctionComponent<RootProps> = (props) => {
     const newValue = deepClone(value);
 
     newValue.rows.forEach((_, i) => {
-      newValue.rows[i].cells.splice(index, 0, '')
+      newValue.rows[i].cells.splice(index, 0, '');
     });
 
     return updateValue(newValue);
   };
 
-  const removeColumn = (index) => {
+  const removeColumn = (index: number) => {
     const newValue = deepClone(value);
-    newValue.rows.forEach((row) => {
+    newValue.rows.forEach(row => {
       row.cells.splice(index, 1);
     });
     updateValue(newValue);
     setDialog(null);
   };
 
-  const updateCell = (e, rowIndex, cellIndex) => {
+  const updateCell = (
+    e: FormEvent<HTMLInputElement>,
+    rowIndex: number,
+    cellIndex: number
+  ) => {
     const newValue = deepClone(value);
-    newValue.rows[rowIndex].cells[cellIndex] = e.target.value;
+    newValue.rows[rowIndex].cells[cellIndex] = (
+      e.target as HTMLInputElement
+    ).value;
     return updateValue(newValue);
   };
 
@@ -184,12 +213,14 @@ const TableComponent: FunctionComponent<RootProps> = (props) => {
           />
         )}
       </Flex>
-      {value?.rows?.length && <TableInput
-        rows={value.rows}
-        removeRow={confirmRemoveRow}
-        removeColumn={confirmRemoveColumn}
-        updateCell={updateCell}
-      />}
+      {value?.rows?.length && (
+        <TableInput
+          rows={value.rows}
+          removeRow={confirmRemoveRow}
+          removeColumn={confirmRemoveColumn}
+          updateCell={updateCell}
+        />
+      )}
       {(!value || !value?.rows?.length) && (
         <TableControl create={createTable} />
       )}
@@ -197,6 +228,4 @@ const TableComponent: FunctionComponent<RootProps> = (props) => {
   );
 };
 
-export default forwardRef((props: RootProps, ref) => (
-  <TableComponent {...props} />
-));
+export default forwardRef<never, Props>(props => <TableComponent {...props} />);

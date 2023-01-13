@@ -1,4 +1,4 @@
-import React, { FunctionComponent, useState } from 'react';
+import React, { FormEventHandler, FunctionComponent, useState } from 'react';
 import {
   Box,
   Button,
@@ -20,7 +20,7 @@ const TableMenu: FunctionComponent<{
   addRowAt: (index: number) => any;
   remove: () => any;
   placement: 'top' | 'bottom' | 'left' | 'right' | 'auto';
-}> = (props) => {
+}> = props => {
   const [dialog, setDialog] = useState<{
     type: string;
     callback: (count: number) => any;
@@ -28,27 +28,27 @@ const TableMenu: FunctionComponent<{
 
   const [count, setCount] = useState('');
 
-  const updateCount = (e) => {
+  const updateCount: FormEventHandler<HTMLInputElement> = e => {
     setCount(e.currentTarget.value);
-  }
+  };
 
   const addRows = () => {
-    setDialog({ type: 'rows', callback: (count) => props.addRows(count) });
+    setDialog({ type: 'rows', callback: count => props.addRows(count) });
   };
 
   const addRowAt = () => {
-    setDialog({ type: 'rows', callback: (index) => props.addRowAt(index) });
+    setDialog({ type: 'rows', callback: index => props.addRowAt(index) });
   };
 
   const addColumns = () => {
     setDialog({
       type: 'columns',
-      callback: (count) => props.addColumns(count),
+      callback: count => props.addColumns(count),
     });
   };
 
   const addColumnsAt = () => {
-    setDialog({ type: 'columns', callback: (index) => props.addColumnAt(index) });
+    setDialog({ type: 'columns', callback: index => props.addColumnAt(index) });
   };
 
   const onConfirm = () => {
